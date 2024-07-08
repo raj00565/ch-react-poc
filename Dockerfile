@@ -1,24 +1,23 @@
-# Use an official Node.js runtime as a parent image
-FROM node:14-alpine
+# Stage 1: Build the application
+FROM node:14 AS build
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the package.json and package-lock.json files
-COPY package*.json ./
+COPY package.json ./
+COPY package-lock.json ./
 
-# Install the project dependencies
 RUN npm install
 
-# Copy the rest of the application code
-COPY . .
+COPY . ./
 
-# Build the React application
 RUN npm run build
 
-# Serve the built application using a lightweight web server
-RUN npm install -g serve
-CMD ["serve", "-s", "build"]
+# Stage 2: Serve the application
+FROM nginx:alpine
 
-# Expose the port the app runs on
-EXPOSE 5000
+COPY --from=build /app/build /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
